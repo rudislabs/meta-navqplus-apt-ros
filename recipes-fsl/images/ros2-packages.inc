@@ -2,6 +2,7 @@ ROS_HUMBLE_MSGS = " \
 ros-humble-ackermann-msgs \
 ros-humble-action-msgs \
 ros-humble-actionlib-msgs \
+ros-humble-actuator-msgs \
 ros-humble-automotive-autonomy-msgs \
 ros-humble-automotive-navigation-msgs \
 ros-humble-automotive-platform-msgs \
@@ -102,7 +103,6 @@ ros-humble-vision-msgs \
 ros-humble-visualization-msgs \
 ros-humble-webots-ros2-msgs \
 ros-humble-wiimote-msgs \
-ros-humble-create3-slam-launch \
 "
 
 #ros-humble-rslidar-msgs
