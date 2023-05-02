@@ -18,7 +18,7 @@ IMAGE_INSTALL:append = "opencv \
 
 IMAGE_INSTALL += "install-interface-config install-dns-config"
 
-ROOTFS_POSTPROCESS_COMMAND:prepend = " do_ros_repo; do_pmd_repo;"
+ROOTFS_POSTPROCESS_COMMAND:prepend = " do_ros_repo;"
 ROOTFS_POSTPROCESS_COMMAND:remove = " do_update_dns;"
 ROOTFS_POSTPROCESS_COMMAND:append = " do_disable_hibernate; \
 					do_fix_dns; do_install_home_files;"
@@ -135,19 +135,18 @@ APTGET_EXTRA_PACKAGES += "\
 "
 
 APTGET_EXTRA_PACKAGES_LAST += " \
-	ros-humble-desktop \
-	ros-humble-cv-bridge \
-	ros-humble-image-tools \
-	ros-humble-image-transport \
-	ros-humble-image-transport-plugins \
-	ros-humble-camera-calibration-parsers \
-	ros-humble-camera-info-manager \
-	ros-humble-launch-testing-ament-cmake \
-	ros-humble-vision-opencv \
-	ros-humble-image-pipeline \
-	${ROS_HUMBLE_MSGS} \
-	${ROS_HUMBLE_RMWS} \
-	ros-humble-pmd-camera-ros \
+	ros-rolling-desktop \
+	ros-rolling-cv-bridge \
+	ros-rolling-image-tools \
+	ros-rolling-image-transport \
+	ros-rolling-image-transport-plugins \
+	ros-rolling-camera-calibration-parsers \
+	ros-rolling-camera-info-manager \
+	ros-rolling-launch-testing-ament-cmake \
+	ros-rolling-vision-opencv \
+	ros-rolling-image-pipeline \
+	${ROS_ROLLING_MSGS} \
+	${ROS_ROLLING_RMWS} \
 "
 
 # Couldn't get v4l2loopback-utils because of dkms failure. Try later maybe?
@@ -178,14 +177,6 @@ fakeroot do_ros_repo() {
 	set +x
 }
 
-fakeroot do_pmd_repo() {
-	set -x
-
-	echo "deb [trusted=yes] https://vb-files.fra1.digitaloceanspaces.com/debian/ jammy pmd" > ${APTGET_CHROOT_DIR}/etc/apt/sources.list.d/pmd.list
-
-	set +x
-}
-
 do_generate_netplan() {
 	set -x
 
@@ -206,9 +197,9 @@ fakeroot do_fix_dns() {
 fakeroot do_install_home_files() {
 	set -x
 
-	wget -q -P ${APTGET_CHROOT_DIR}/home/user/ https://raw.githubusercontent.com/rudislabs/NavQPlus-Resources/lf-5.15.32_2.0.0/configs/CycloneDDSConfig.xml
+	wget -q -P ${APTGET_CHROOT_DIR}/home/user/ https://raw.githubusercontent.com/rudislabs/NavQPlus-Resources/cyclonedds_0.10.x/configs/CycloneDDSConfig.xml
 
-	echo "source /opt/ros/humble/setup.bash" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
+	echo "source /opt/ros/rolling/setup.bash" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
 	echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
 	echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
 	echo "export CYCLONEDDS_URI=/home/\$USER/CycloneDDSConfig.xml" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
