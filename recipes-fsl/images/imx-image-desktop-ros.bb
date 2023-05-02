@@ -18,7 +18,7 @@ IMAGE_INSTALL:append = "opencv \
 
 IMAGE_INSTALL += "install-interface-config install-dns-config"
 
-ROOTFS_POSTPROCESS_COMMAND:prepend = " do_ros_repo; do_pmd_repo;"
+ROOTFS_POSTPROCESS_COMMAND:prepend = " do_ros_repo;"
 ROOTFS_POSTPROCESS_COMMAND:remove = " do_update_dns;"
 ROOTFS_POSTPROCESS_COMMAND:append = " do_disable_hibernate; \
 					do_fix_dns; do_install_home_files;"
@@ -135,19 +135,19 @@ APTGET_EXTRA_PACKAGES += "\
 "
 
 APTGET_EXTRA_PACKAGES_LAST += " \
-	ros-humble-desktop \
-	ros-humble-cv-bridge \
-	ros-humble-image-tools \
-	ros-humble-image-transport \
-	ros-humble-image-transport-plugins \
-	ros-humble-camera-calibration-parsers \
-	ros-humble-camera-info-manager \
-	ros-humble-launch-testing-ament-cmake \
-	ros-humble-vision-opencv \
-	ros-humble-image-pipeline \
-	${ROS_HUMBLE_MSGS} \
-	${ROS_HUMBLE_RMWS} \
-	ros-humble-pmd-camera-ros \
+	ros-iron-desktop \
+	ros-iron-camera-calibration \
+	ros-iron-camera-calibration-parsers \
+	ros-iron-camera-info-manager \
+	ros-iron-cv-bridge \
+	ros-iron-image-pipeline \
+	ros-iron-image-tools \
+	ros-iron-image-transport \
+	ros-iron-image-transport-plugins \
+	ros-iron-launch-testing-ament-cmake \
+	ros-iron-vision-opencv \
+	${ROS_IRON_MSGS} \
+	${ROS_IRON_RMWS} \
 "
 
 # Couldn't get v4l2loopback-utils because of dkms failure. Try later maybe?
@@ -173,15 +173,7 @@ fakeroot do_ros_repo() {
 	set -x
 
 	wget https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -O ${APTGET_CHROOT_DIR}/usr/share/keyrings/ros-archive-keyring.gpg
-	echo "deb [arch=arm64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu jammy main" > ${APTGET_CHROOT_DIR}/etc/apt/sources.list.d/ros2.list
-
-	set +x
-}
-
-fakeroot do_pmd_repo() {
-	set -x
-
-	echo "deb [trusted=yes] https://vb-files.fra1.digitaloceanspaces.com/debian/ jammy pmd" > ${APTGET_CHROOT_DIR}/etc/apt/sources.list.d/pmd.list
+	echo "deb [arch=arm64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2-testing/ubuntu jammy main" > ${APTGET_CHROOT_DIR}/etc/apt/sources.list.d/ros2-testing.list
 
 	set +x
 }
@@ -206,9 +198,9 @@ fakeroot do_fix_dns() {
 fakeroot do_install_home_files() {
 	set -x
 
-	wget -q -P ${APTGET_CHROOT_DIR}/home/user/ https://raw.githubusercontent.com/rudislabs/NavQPlus-Resources/lf-5.15.32_2.0.0/configs/CycloneDDSConfig.xml
+	wget -q -P ${APTGET_CHROOT_DIR}/home/user/ https://raw.githubusercontent.com/rudislabs/NavQPlus-Resources/cyclonedds_0.10.x/configs/CycloneDDSConfig.xml
 
-	echo "source /opt/ros/humble/setup.bash" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
+	echo "source /opt/ros/iron/setup.bash" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
 	echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
 	echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
 	echo "export CYCLONEDDS_URI=/home/\$USER/CycloneDDSConfig.xml" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
