@@ -20,9 +20,7 @@ IMAGE_INSTALL:append = "opencv \
 			umtp-responder \
 			navq-kmod-mlan \
 			gnome-shell-extension-no-overview \
-			matter \
 			mdns \
-			ot-br-posix \
 			navq-persistent-storage \
 			hdmi-detect \
 			u-boot-imx-env \
@@ -33,7 +31,7 @@ IMAGE_INSTALL:append = "opencv \
 
 IMAGE_INSTALL += "install-interface-config install-dns-config"
 
-ROOTFS_POSTPROCESS_COMMAND:prepend = " do_ros_repo; do_vb_repo;"
+ROOTFS_POSTPROCESS_COMMAND:prepend = " do_ros_repo;"
 ROOTFS_POSTPROCESS_COMMAND:remove = " do_update_dns;"
 ROOTFS_POSTPROCESS_COMMAND:append = " do_disable_hibernate; \
 					do_fix_dns; \
@@ -159,19 +157,20 @@ APTGET_EXTRA_PACKAGES += "\
 
 APTGET_EXTRA_PACKAGES_LAST += " \
 	ros-humble-desktop \
+	ros-humble-camera-calibration \
+	ros-humble-camera-calibration-parsers \
+	ros-humble-camera-info-manager \
 	ros-humble-cv-bridge \
+	ros-humble-image-pipeline \
 	ros-humble-image-tools \
 	ros-humble-image-transport \
 	ros-humble-image-transport-plugins \
-	ros-humble-camera-calibration-parsers \
-	ros-humble-camera-info-manager \
 	ros-humble-launch-testing-ament-cmake \
+	ros-humble-nav2-bringup \
+	ros-humble-topic-tools \
 	ros-humble-vision-opencv \
-	ros-humble-image-pipeline \
 	${ROS_HUMBLE_MSGS} \
 	${ROS_HUMBLE_RMWS} \
-	ros-humble-pmd-camera-ros \
-	libroyale-royaleviewer \
 "
 
 # Couldn't get v4l2loopback-utils because of dkms failure. Try later maybe?
@@ -202,14 +201,6 @@ fakeroot do_ros_repo() {
 	set +x
 }
 
-fakeroot do_vb_repo() {
-	set -x
-
-	echo "deb [trusted=yes] https://vb-files.fra1.digitaloceanspaces.com/debian/ jammy voxelbotics" > ${APTGET_CHROOT_DIR}/etc/apt/sources.list.d/voxelbotics.list
-
-	set +x
-}
-
 fakeroot do_generate_netplan() {
 	set -x
 
@@ -230,10 +221,11 @@ fakeroot do_fix_dns() {
 fakeroot do_install_home_files() {
 	set -x
 
-	wget -q -P ${APTGET_CHROOT_DIR}/home/user/ https://raw.githubusercontent.com/rudislabs/NavQPlus-Resources/lf-5.15.32_2.0.0/configs/CycloneDDSConfig.xml
+	wget -q -P ${APTGET_CHROOT_DIR}/home/user/ https://raw.githubusercontent.com/rudislabs/NavQPlus-Resources/lf-6.1.22_2.0.0/configs/CycloneDDSConfig.xml
 
 	echo "source /opt/ros/humble/setup.bash" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
 	echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
+	echo "export ROS_DOMAIN_ID=7" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
 	echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
 	echo "export CYCLONEDDS_URI=/home/\$USER/CycloneDDSConfig.xml" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
 
