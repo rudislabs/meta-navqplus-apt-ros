@@ -57,6 +57,7 @@ APTGET_EXTRA_PACKAGES += "\
 	build-essential \
 	cmake \
 	git \
+	htop \
 	ccache \
 	can-utils \
 	pkg-config \
@@ -68,8 +69,10 @@ APTGET_EXTRA_PACKAGES += "\
 	python3-rosdep \
 	python3-setuptools \
 	python3-testresources \
-	python3-vcstools \
+	python3-vcstool \
 	python3-argcomplete \
+	python3-ipython \
+	python3-netifaces \
 	python3-empy \
 	python3-jinja2 \
 	python3-cerberus \
@@ -145,11 +148,13 @@ APTGET_EXTRA_PACKAGES += "\
 	v4l-utils \
 	gstreamer1.0-nice \
 	gstreamer1.0-opencv \
-	iw   \
+	iw \
 	usbutils \
 	qtwayland5 \
 	docker.io \
 	docker-compose \
+	iperf \
+	nethogs \
 	radvd \
 	${@bb.utils.contains('PACKAGE_CLASSES', 'package_rpm', 'rpm', '', d)} \
 	picocom	\
@@ -161,6 +166,7 @@ APTGET_EXTRA_PACKAGES_LAST += " \
 	ros-humble-camera-calibration-parsers \
 	ros-humble-camera-info-manager \
 	ros-humble-cv-bridge \
+	ros-humble-foxglove-bridge \
 	ros-humble-image-pipeline \
 	ros-humble-image-tools \
 	ros-humble-image-transport \
@@ -223,14 +229,30 @@ fakeroot do_install_home_files() {
 
 	wget -q -P ${APTGET_CHROOT_DIR}/home/user/ https://raw.githubusercontent.com/rudislabs/NavQPlus-Resources/lf-6.1.22_2.0.0/configs/CycloneDDSConfig.xml
 
-	echo "source /opt/ros/humble/setup.bash" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
-	echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
-	echo "export ROS_DOMAIN_ID=7" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
-	echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
-	echo "export CYCLONEDDS_URI=/home/\$USER/CycloneDDSConfig.xml" >> ${APTGET_CHROOT_DIR}/home/user/.bashrc
+	cat >> ${APTGET_CHROOT_DIR}/home/user/.bashrc <<-EOF
+		source /opt/ros/humble/setup.bash
+		source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
+		export ROS_DOMAIN_ID=7
+		export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+		export CYCLONEDDS_URI=/home/\$USER/CycloneDDSConfig.xml
+		export PYTHONWARNINGS=ignore:::setuptools.installer,ignore:::setuptools.command.install,ignore:::setuptools.command.easy_install
+		source /usr/share/vcstool-completion/vcs.bash
+		export PATH=/usr/lib/ccache:\$PATH
+		export CCACHE_TEMPDIR=/tmp/ccache
+		EOF
+
+	cat >> ${APTGET_CHROOT_DIR}/home/user/install_cognipilot.sh <<-EOF
+		wget -O /home/\$USER/navqplus_install.sh https://raw.githubusercontent.com/CogniPilot/helmet/main/install/navqplus_install.sh
+		chmod a+x /home/\$USER/navqplus_install.sh
+		./home/\$USER/navqplus_install.sh
+		EOF
 
 	chown user:user ${APTGET_CHROOT_DIR}/home/user/CycloneDDSConfig.xml
 	chown user:user ${APTGET_CHROOT_DIR}/home/user/.bashrc
+	chown -R user:user ${APTGET_CHROOT_DIR}/home/user/.cache/
+
+	chown user:user ${APTGET_CHROOT_DIR}/home/user/install_cognipilot.sh
+	chmod 755 ${APTGET_CHROOT_DIR}/home/user/install_cognipilot.sh
 
 	set +x
 }
@@ -245,7 +267,7 @@ fakeroot do_aptget_user_update() {
 	# configure synchronization with Create3
 	cat > ${APTGET_CHROOT_DIR}/etc/chrony/conf.d/create3.conf <<-EOF
 		# Make it slightly to the past so host/rviz wouldn't complain
-		pool ntp.ubuntu.com        iburst maxsources 4 offset -0.3
+		pool ntp.ubuntu.com		iburst maxsources 4 offset -0.3
 		pool 0.ubuntu.pool.ntp.org iburst maxsources 1 offset -0.3
 		pool 1.ubuntu.pool.ntp.org iburst maxsources 1 offset -0.3
 		pool 2.ubuntu.pool.ntp.org iburst maxsources 2 offset -0.3
@@ -257,45 +279,73 @@ fakeroot do_aptget_user_update() {
 }
 
 do_enable_gdm_autologin () {
-    # Enable gdm auto-login
-    sed -i "s/#  AutomaticLoginEnable = true/AutomaticLoginEnable = true/" ${IMAGE_ROOTFS}/etc/gdm3/custom.conf
-    sed -i "s/#  AutomaticLogin = user1/AutomaticLogin = user/" ${IMAGE_ROOTFS}/etc/gdm3/custom.conf
+	# Enable gdm auto-login
+	sed -i "s/#  AutomaticLoginEnable = true/AutomaticLoginEnable = true/" ${IMAGE_ROOTFS}/etc/gdm3/custom.conf
+	sed -i "s/#  AutomaticLogin = user1/AutomaticLogin = user/" ${IMAGE_ROOTFS}/etc/gdm3/custom.conf
 }
 
 DEPENDS:append = " dconf-native"
 
 fakeroot do_config_gnome () {
-    set -x
+	set -x
 
-    install -d ${IMAGE_ROOTFS}${sysconfdir}/dconf/profile
-    echo "user-db:user" > ${IMAGE_ROOTFS}${sysconfdir}/dconf/profile/user
-    echo "system-db:local" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/profile/user
+	install -d ${IMAGE_ROOTFS}${sysconfdir}/dconf/profile
+	echo "user-db:user" > ${IMAGE_ROOTFS}${sysconfdir}/dconf/profile/user
+	echo "system-db:local" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/profile/user
 
-    install -d ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d
-    echo "[org/gnome/desktop/screensaver]" > ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
-    echo -e "lock-enabled=false\n" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
-    echo "[org/gnome/settings-daemon/plugins/power]" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
-    echo -e "sleep-inactive-ac-type='nothing'\n" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
-    echo "[org/gnome/desktop/session]" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
-    echo -e "idle-delay=uint32 0\n" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
-    echo "[org/gnome/shell]" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
-    echo "enabled-extensions=['no-overview@fthx']" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
+	install -d ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d
+	echo "[org/gnome/desktop/screensaver]" > ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
+	echo -e "lock-enabled=false\n" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
+	echo "[org/gnome/settings-daemon/plugins/power]" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
+	echo -e "sleep-inactive-ac-type='nothing'\n" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
+	echo "[org/gnome/desktop/session]" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
+	echo -e "idle-delay=uint32 0\n" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
+	echo "[org/gnome/shell]" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
+	echo "enabled-extensions=['no-overview@fthx']" >> ${IMAGE_ROOTFS}${sysconfdir}/dconf/db/local.d/00-gnome-config
 
-    dconf update ${IMAGE_ROOTFS}${sysconfdir}/dconf/db
+	dconf update ${IMAGE_ROOTFS}${sysconfdir}/dconf/db
 
-    set +x
+	set +x
 }
 
 fakeroot do_prepare_docker () {
-    sed -i 's/\/systemd-networkd-wait-online/\/systemd-networkd-wait-online --any/' ${IMAGE_ROOTFS}/lib/systemd/system/systemd-networkd-wait-online.service
+	sed -i 's/\/systemd-networkd-wait-online/\/systemd-networkd-wait-online --any/' ${IMAGE_ROOTFS}/lib/systemd/system/systemd-networkd-wait-online.service
 
-    ln -sf /usr/sbin/iptables-legacy ${IMAGE_ROOTFS}/etc/alternatives/iptables
-    ln -sf /usr/sbin/iptables-legacy-save ${IMAGE_ROOTFS}/etc/alternatives/iptables-save
-    ln -sf /usr/sbin/iptables-legacy-restore ${IMAGE_ROOTFS}/etc/alternatives/iptables-restore
+	ln -sf /usr/sbin/iptables-legacy ${IMAGE_ROOTFS}/etc/alternatives/iptables
+	ln -sf /usr/sbin/iptables-legacy-save ${IMAGE_ROOTFS}/etc/alternatives/iptables-save
+	ln -sf /usr/sbin/iptables-legacy-restore ${IMAGE_ROOTFS}/etc/alternatives/iptables-restore
 
-    ln -sf /usr/sbin/ip6tables-legacy ${IMAGE_ROOTFS}/etc/alternatives/ip6tables
-    ln -sf /usr/sbin/ip6tables-legacy-save ${IMAGE_ROOTFS}/etc/alternatives/ip6tables-save
-    ln -sf /usr/sbin/ip6tables-legacy-restore ${IMAGE_ROOTFS}/etc/alternatives/ip6tables-restore
+	ln -sf /usr/sbin/ip6tables-legacy ${IMAGE_ROOTFS}/etc/alternatives/ip6tables
+	ln -sf /usr/sbin/ip6tables-legacy-save ${IMAGE_ROOTFS}/etc/alternatives/ip6tables-save
+	ln -sf /usr/sbin/ip6tables-legacy-restore ${IMAGE_ROOTFS}/etc/alternatives/ip6tables-restore
+}
+
+fakeroot do_config_default_system () {
+	set -x
+	
+	chroot ${APTGET_CHROOT_DIR} /usr/bin/powerprofilesctl set performance
+	chroot ${APTGET_CHROOT_DIR} /usr/bin/systemctl set-default multi-user.target
+	chroot ${APTGET_CHROOT_DIR} /usr/bin/systemctl stop docker
+	chroot ${APTGET_CHROOT_DIR} /usr/bin/systemctl stop containerd
+	chroot ${APTGET_CHROOT_DIR} /usr/bin/systemctl disable docker.service
+	chroot ${APTGET_CHROOT_DIR} /usr/bin/systemctl disable docker.socket
+	chroot ${APTGET_CHROOT_DIR} /usr/bin/systemctl disable containerd.service
+
+	chroot ${APTGET_CHROOT_DIR} /usr/sbin/dpkg-reconfigure -plow unattended-upgrades
+
+	wget -q -P ${APTGET_CHROOT_DIR}/usr/share/backgrounds/ https://raw.githubusercontent.com/CogniPilot/artwork/main/CogniPilotLogoDarkBackgrounds.png
+
+	wget -q -P ${APTGET_CHROOT_DIR}/usr/share/backgrounds/ https://raw.githubusercontent.com/CogniPilot/artwork/main/CogniPilotLogoLightBackgrounds.png
+
+	chroot ${APTGET_CHROOT_DIR} /usr/bin/gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+
+	chroot ${APTGET_CHROOT_DIR} /usr/bin/gsettings set org.gnome.desktop.background picture-uri file:////usr/share/backgrounds/CogniPilotLogoLightBackgrounds.png
+
+	chroot ${APTGET_CHROOT_DIR} /usr/bin/gsettings set org.gnome.desktop.background picture-uri-dark file:////usr/share/backgrounds/CogniPilotLogoDarkBackgrounds.png
+
+	chroot ${APTGET_CHROOT_DIR} /usr/bin/gsettings set org.gnome.desktop.background picture-options 'scaled'
+
+	set +x
 }
 
 do_fix_bt () {
