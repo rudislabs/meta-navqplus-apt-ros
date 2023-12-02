@@ -231,20 +231,21 @@ fakeroot do_install_home_files() {
 
 	cat >> ${APTGET_CHROOT_DIR}/home/user/.bashrc <<-EOF
 		source /opt/ros/humble/setup.bash
-		source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
 		export ROS_DOMAIN_ID=7
 		export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 		export CYCLONEDDS_URI=/home/\$USER/CycloneDDSConfig.xml
 		export PYTHONWARNINGS=ignore:::setuptools.installer,ignore:::setuptools.command.install,ignore:::setuptools.command.easy_install
-		source /usr/share/vcstool-completion/vcs.bash
 		export PATH=/usr/lib/ccache:\$PATH
 		export CCACHE_TEMPDIR=/tmp/ccache
+		source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
+		source /usr/share/colcon_cd/function/colcon_cd.sh
+		source /usr/share/vcstool-completion/vcs.bash
 		EOF
 
 	cat >> ${APTGET_CHROOT_DIR}/home/user/install_cognipilot.sh <<-EOF
 		wget -O /home/\$USER/navqplus_install.sh https://raw.githubusercontent.com/CogniPilot/helmet/main/install/navqplus_install.sh
 		chmod a+x /home/\$USER/navqplus_install.sh
-		./home/\$USER/navqplus_install.sh
+		/bin/bash /home/\$USER/navqplus_install.sh
 		EOF
 
 	chown user:user ${APTGET_CHROOT_DIR}/home/user/CycloneDDSConfig.xml
@@ -318,34 +319,6 @@ fakeroot do_prepare_docker () {
 	ln -sf /usr/sbin/ip6tables-legacy ${IMAGE_ROOTFS}/etc/alternatives/ip6tables
 	ln -sf /usr/sbin/ip6tables-legacy-save ${IMAGE_ROOTFS}/etc/alternatives/ip6tables-save
 	ln -sf /usr/sbin/ip6tables-legacy-restore ${IMAGE_ROOTFS}/etc/alternatives/ip6tables-restore
-}
-
-fakeroot do_config_default_system () {
-	set -x
-	
-	chroot ${APTGET_CHROOT_DIR} /usr/bin/powerprofilesctl set performance
-	chroot ${APTGET_CHROOT_DIR} /usr/bin/systemctl set-default multi-user.target
-	chroot ${APTGET_CHROOT_DIR} /usr/bin/systemctl stop docker
-	chroot ${APTGET_CHROOT_DIR} /usr/bin/systemctl stop containerd
-	chroot ${APTGET_CHROOT_DIR} /usr/bin/systemctl disable docker.service
-	chroot ${APTGET_CHROOT_DIR} /usr/bin/systemctl disable docker.socket
-	chroot ${APTGET_CHROOT_DIR} /usr/bin/systemctl disable containerd.service
-
-	chroot ${APTGET_CHROOT_DIR} /usr/sbin/dpkg-reconfigure -plow unattended-upgrades
-
-	wget -q -P ${APTGET_CHROOT_DIR}/usr/share/backgrounds/ https://raw.githubusercontent.com/CogniPilot/artwork/main/CogniPilotLogoDarkBackgrounds.png
-
-	wget -q -P ${APTGET_CHROOT_DIR}/usr/share/backgrounds/ https://raw.githubusercontent.com/CogniPilot/artwork/main/CogniPilotLogoLightBackgrounds.png
-
-	chroot ${APTGET_CHROOT_DIR} /usr/bin/gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-
-	chroot ${APTGET_CHROOT_DIR} /usr/bin/gsettings set org.gnome.desktop.background picture-uri file:////usr/share/backgrounds/CogniPilotLogoLightBackgrounds.png
-
-	chroot ${APTGET_CHROOT_DIR} /usr/bin/gsettings set org.gnome.desktop.background picture-uri-dark file:////usr/share/backgrounds/CogniPilotLogoDarkBackgrounds.png
-
-	chroot ${APTGET_CHROOT_DIR} /usr/bin/gsettings set org.gnome.desktop.background picture-options 'scaled'
-
-	set +x
 }
 
 do_fix_bt () {
