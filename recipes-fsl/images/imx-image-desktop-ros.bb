@@ -165,8 +165,10 @@ APTGET_EXTRA_PACKAGES_LAST += " \
 	ros-humble-camera-calibration \
 	ros-humble-camera-calibration-parsers \
 	ros-humble-camera-info-manager \
+	ros-humble-compressed-image-transport \
 	ros-humble-cv-bridge \
 	ros-humble-foxglove-bridge \
+	ros-humble-gscam \
 	ros-humble-image-pipeline \
 	ros-humble-image-tools \
 	ros-humble-image-transport \
@@ -243,7 +245,7 @@ fakeroot do_install_home_files() {
 		EOF
 
 	cat >> ${APTGET_CHROOT_DIR}/home/user/install_cognipilot.sh <<-EOF
-		wget -O /home/\$USER/navqplus_install.sh https://raw.githubusercontent.com/CogniPilot/helmet/main/install/navqplus_install.sh
+		wget -O /home/\$USER/navqplus_install.sh https://raw.githubusercontent.com/CogniPilot/helmet/airy/install/navqplus_install.sh
 		chmod a+x /home/\$USER/navqplus_install.sh
 		/bin/bash /home/\$USER/navqplus_install.sh
 		EOF
@@ -265,17 +267,24 @@ fakeroot do_aptget_user_update() {
 	chroot ${APTGET_CHROOT_DIR} /usr/sbin/adduser user plugdev
 	chroot ${APTGET_CHROOT_DIR} /usr/sbin/adduser user input
 
-	# configure synchronization with Create3
-	cat > ${APTGET_CHROOT_DIR}/etc/chrony/conf.d/create3.conf <<-EOF
-		# Make it slightly to the past so host/rviz wouldn't complain
-		pool ntp.ubuntu.com		iburst maxsources 4 offset -0.3
-		pool 0.ubuntu.pool.ntp.org iburst maxsources 1 offset -0.3
-		pool 1.ubuntu.pool.ntp.org iburst maxsources 1 offset -0.3
-		pool 2.ubuntu.pool.ntp.org iburst maxsources 2 offset -0.3
+	# configure synchronization source for USB0
+	cat > ${APTGET_CHROOT_DIR}/etc/chrony/conf.d/default.conf <<-EOF
+		pool ntp.ubuntu.com        iburst maxsources 4
+		pool 0.ubuntu.pool.ntp.org iburst maxsources 1
+		pool 1.ubuntu.pool.ntp.org iburst maxsources 1
+		pool 2.ubuntu.pool.ntp.org iburst maxsources 2
 		# Enable serving time to ntp clients on 192.168.186.0 subnet.
 		allow 192.168.186.0/24
 		# Serve time even if not synchronized to a time source
 		local stratum 10
+		EOF
+
+	# disable apport from running.
+	cat > ${APTGET_CHROOT_DIR}/etc/default/apport <<-EOF
+		# set this to 0 to disable apport, or to 1 to enable it
+		# you can temporarily override this with
+		# sudo service apport start force_start=1
+		enabled=0
 		EOF
 }
 
