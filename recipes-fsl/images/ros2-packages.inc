@@ -74,8 +74,8 @@ ros-humble-ublox-ubx-msgs \
 ros-humble-udp-msgs \
 ros-humble-unique-identifier-msgs \
 ros-humble-vision-msgs \
-ros-iron-vision-msgs-layers \
-ros-iron-vision-msgs-rviz-plugins \
+ros-humble-vision-msgs-layers \
+ros-humble-vision-msgs-rviz-plugins \
 ros-humble-visualization-msgs \
 ros-humble-wireless-msgs \
 "
