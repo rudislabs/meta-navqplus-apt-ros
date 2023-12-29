@@ -3,7 +3,6 @@
 
 BUILD_TYPE=humble
 BRANCH=imx-6.1.22-$BUILD_TYPE
-BRANCH_OTHER=imx-6.1.22-vb
 
 MANIFEST="imx-6.1.22-2.0.0_desktop.xml"
 DISTRO="imx-desktop-xwayland"
@@ -51,11 +50,7 @@ for i in u-boot-imx linux-imx meta-navqplus-apt-ros; do
         git pull
         popd
     else
-        if [ $i = "meta-navqplus-apt-ros" ]; then
-            git clone -b $BRANCH git@github.com:rudislabs/${i}.git || exit $?
-        else
-            git clone -b $BRANCH_OTHER git@github.com:rudislabs/${i}.git || exit $?
-        fi
+        git clone -b $BRANCH git@github.com:rudislabs/${i}.git || exit $?
     fi
     if [ $i = "meta-navqplus-apt-ros" ]; then
         pushd $i
@@ -133,12 +128,16 @@ ros_files=(
     imx-image-desktop-ros-imx8mpnavq.wic.zst
 )
 
+echo -e "\n\nMOVING FILES\n\n"
+
 if [ -d "/home/user/work/$BUILD_OUTPUT" ]; then
     mkdir -p /home/user/work/$BUILD_OUTPUT/$RELEASE_VER
     for i in ${files[*]} ${ros_files[*]}; do
         file=/home/user/work/$BUILDDIR/builddir/tmp/deploy/images/imx8mpnavq/$i
+        echo -e "$file ->"
         if [ -f $file ]; then
-            cp $file /home/user/work/$BUILD_OUTPUT/$RELEASE_VER/
+            cp $file /home/user/work/$BUILD_OUTPUT/$RELEASE_VER/$i
+            echo -e "/home/user/work/$BUILD_OUTPUT/$RELEASE_VER/$i"
         fi
     done
 fi

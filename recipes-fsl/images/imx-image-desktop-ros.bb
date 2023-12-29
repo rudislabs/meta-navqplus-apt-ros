@@ -155,6 +155,7 @@ APTGET_EXTRA_PACKAGES += "\
 	docker-compose \
 	iperf \
 	nethogs \
+	screen \
 	radvd \
 	${@bb.utils.contains('PACKAGE_CLASSES', 'package_rpm', 'rpm', '', d)} \
 	picocom	\
