@@ -133,7 +133,7 @@ echo -e "\n\nMOVING FILES\n\n"
 if [ -d "/home/user/work/$BUILD_OUTPUT" ]; then
     mkdir -p /home/user/work/$BUILD_OUTPUT/$RELEASE_VER
     for i in ${files[*]} ${ros_files[*]}; do
-        file=/home/user/work/$BUILDDIR/builddir/tmp/deploy/images/imx8mpnavq/$i
+        file=$BUILDDIR/tmp/deploy/images/imx8mpnavq/$i
         echo -e "$file ->"
         if [ -f $file ]; then
             cp $file /home/user/work/$BUILD_OUTPUT/$RELEASE_VER/$i
