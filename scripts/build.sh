@@ -62,19 +62,16 @@ done
 
 popd # tmp
 
-sudo git config --global filter.lfs.smudge "git-lfs smudge -- %f"
-sudo git config --global filter.lfs.process "git-lfs filter-process"
-
 pushd sources
 rm -f meta-navqplus-apt-ros && ln -s ../tmp/meta-navqplus-apt-ros . || exit $?
 git clone -b mickledore https://github.com/sbabic/meta-swupdate.git
-git clone -b LF6.1.22_P22 https://github.com/nxp-imx-support/meta-imx8mp-isp-ov5647.git
-sed -ie 's/\(BBFILE_PRIORITY.* = \)"[0-9]\+"/\1"7"/' meta-imx8mp-isp-ov5647/conf/layer.conf
 popd # sources
 RELEASE_VER="${BUILD_TYPE}-$(date +%y%m%d%H%M%S)-${yocto_hash}"
 
 DISTRO=${DISTRO} MACHINE=imx8mpnavq EULA=yes BUILD_DIR=builddir source ./${SETUP} || exit $?
 
+sed -i 's/^DL_DIR.*$/DL_DIR\ \?=\ \"\/home\/cache\/CACHE\/6.1.22\/downloads\/\"/' conf/local.conf || exit $?
+echo "SSTATE_DIR = \"/home/cache/CACHE/6.1.22/sstate-cache\"" >> conf/local.conf || exit $?
 echo "BBMASK += \"$BBMASK\"" >> conf/local.conf || exit $?
 
 # Don't build gstreamer curl plugin, to remove dependency of libcurl,
@@ -86,7 +83,6 @@ sed -i -e "s/PACKAGE_CLASSES ?\?=.*$/PACKAGE_CLASSES ?= \"package_$PACKAGING\"/"
 
 echo BBLAYERS += \"\${BSPDIR}/sources/meta-navqplus-apt-ros\" >> conf/bblayers.conf || exit $?
 echo BBLAYERS += \"\${BSPDIR}/sources/meta-swupdate\" >> conf/bblayers.conf || exit $?
-echo BBLAYERS += \"\${BSPDIR}/sources/meta-imx8mp-isp-ov5647\" >> conf/bblayers.conf || exit $?
 
 echo $RELEASE_VER > ${BUILDDIR}/../sources/meta-navqplus-apt-ros/recipes-fsl/images/files/release || exit $?
 

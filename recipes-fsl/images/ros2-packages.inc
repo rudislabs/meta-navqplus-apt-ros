@@ -73,6 +73,7 @@ ros-humble-ublox-msgs \
 ros-humble-ublox-ubx-msgs \
 ros-humble-udp-msgs \
 ros-humble-unique-identifier-msgs \
+ros-humble-v4l2-camera \
 ros-humble-vision-msgs \
 ros-humble-vision-msgs-layers \
 ros-humble-vision-msgs-rviz-plugins \
