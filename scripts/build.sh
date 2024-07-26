@@ -15,8 +15,6 @@ PACKAGING="rpm"
 
 BUILD_OUTPUT="built-images"
 
-umask 0002
-
 BUILD=`date +%Y%m%d.%H%M`; start=`date +%s`
 
 mkdir -p /home/user/work/$BUILD_OUTPUT
@@ -74,8 +72,6 @@ RELEASE_VER="${BUILD_TYPE}-$(date +%y%m%d%H%M%S)-${yocto_hash}"
 
 DISTRO=${DISTRO} MACHINE=imx8mpnavq EULA=yes BUILD_DIR=builddir source ./${SETUP} || exit $?
 
-sed -i 's/^DL_DIR.*$/DL_DIR\ \?=\ \"\/home\/cache\/CACHE\/6.1.22\/downloads\/\"/' conf/local.conf || exit $?
-echo "SSTATE_DIR = \"/home/cache/CACHE/6.1.22/sstate-cache\"" >> conf/local.conf || exit $?
 echo "BBMASK += \"$BBMASK\"" >> conf/local.conf || exit $?
 
 # Don't build gstreamer curl plugin, to remove dependency of libcurl,
