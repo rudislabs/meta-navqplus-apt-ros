@@ -15,6 +15,8 @@ PACKAGING="rpm"
 
 BUILD_OUTPUT="built-images"
 
+umask 0002
+
 BUILD=`date +%Y%m%d.%H%M`; start=`date +%s`
 
 mkdir -p /home/user/work/$BUILD_OUTPUT
@@ -29,6 +31,8 @@ repo init \
     -m ${MANIFEST}
 
 repo sync -j`nproc`
+
+sed 's/more\ -d/\#more\ -d/' setup-environment > x && mv -f x setup-environment || exit $?
 
 get_yocto_hash() {
     local githash=$(git rev-parse --short=10 HEAD)
