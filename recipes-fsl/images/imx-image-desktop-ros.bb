@@ -3,33 +3,6 @@ require imx-image.inc
 require ros2-packages.inc
 
 CUSTOM_FILES_PATH := "${THISDIR}/files"
-SRC_URI = " \
-	file://btinit.sh \
-"
-
-ROOTFS_POSTPROCESS_COMMAND:append = "do_enable_gdm_autologin; do_config_gnome;"
-IMAGE_PREPROCESS_COMMAND:remove = "do_fix_connman_conflict"
-
-IMAGE_INSTALL:append = "opencv \
-			opencv-apps \
-			opencv-samples \
-			python3-opencv \
-			tensorflow-lite-vx-delegate \
-			packagegroup-imx-ml-desktop \
-			usb-gadgets-eth2 \
-			umtp-responder \
-			navq-kmod-mlan \
-			gnome-shell-extension-no-overview \
-			mdns \
-			navq-persistent-storage \
-			hdmi-detect \
-			u-boot-imx-env \
-			libubootenv-bin \
-			libubootenv \
-			u-boot-env-setup \
-			"
-
-IMAGE_INSTALL += "install-interface-config install-dns-config"
 
 ROOTFS_POSTPROCESS_COMMAND:prepend = " do_ros_repo;"
 ROOTFS_POSTPROCESS_COMMAND:remove = " do_update_dns;"
@@ -38,8 +11,6 @@ ROOTFS_POSTPROCESS_COMMAND:append = " do_disable_hibernate; \
 					do_install_home_files; \
 					do_fix_bt; \
 					do_prepare_docker; "
-
-APTGET_EXTRA_LIBRARY_PATH="/usr/lib/jvm/java-11-openjdk-arm64/lib/jli"
 
 APTGET_EXTRA_PACKAGES += "\
 	chrony \
@@ -50,9 +21,7 @@ APTGET_EXTRA_PACKAGES += "\
 	lsb-release \
 	input-utils \
 	libspnav-dev \
-	libbluetooth-dev \
 	libcwiid-dev \
-	jstest-gtk \
 	bash-completion \
 	build-essential \
 	cmake \
@@ -151,36 +120,31 @@ APTGET_EXTRA_PACKAGES += "\
 	gstreamer1.0-opencv \
 	iw \
 	usbutils \
-	qtwayland5 \
-	docker.io \
-	docker-compose \
 	iperf \
 	nethogs \
 	screen \
-	radvd \
 	${@bb.utils.contains('PACKAGE_CLASSES', 'package_rpm', 'rpm', '', d)} \
-	picocom	\
 "
 
 APTGET_EXTRA_PACKAGES_LAST += " \
-	ros-humble-desktop \
-	ros-humble-camera-calibration \
-	ros-humble-camera-calibration-parsers \
-	ros-humble-camera-info-manager \
-	ros-humble-compressed-image-transport \
-	ros-humble-cv-bridge \
-	ros-humble-foxglove-bridge \
-	ros-humble-gscam \
-	ros-humble-image-pipeline \
-	ros-humble-image-tools \
-	ros-humble-image-transport \
-	ros-humble-image-transport-plugins \
-	ros-humble-launch-testing-ament-cmake \
-	ros-humble-nav2-bringup \
-	ros-humble-topic-tools \
-	ros-humble-vision-opencv \
-	${ROS_HUMBLE_MSGS} \
-	${ROS_HUMBLE_RMWS} \
+	ros-jazzy-desktop \
+	ros-jazzy-camera-calibration \
+	ros-jazzy-camera-calibration-parsers \
+	ros-jazzy-camera-info-manager \
+	ros-jazzy-compressed-image-transport \
+	ros-jazzy-cv-bridge \
+	ros-jazzy-foxglove-bridge \
+	ros-jazzy-gscam \
+	ros-jazzy-image-pipeline \
+	ros-jazzy-image-tools \
+	ros-jazzy-image-transport \
+	ros-jazzy-image-transport-plugins \
+	ros-jazzy-launch-testing-ament-cmake \
+	ros-jazzy-nav2-bringup \
+	ros-jazzy-topic-tools \
+	ros-jazzy-vision-opencv \
+	${ROS_JAZZY_MSGS} \
+	${ROS_JAZZY_RMWS} \
 "
 
 # Couldn't get v4l2loopback-utils because of dkms failure. Try later maybe?
@@ -234,15 +198,18 @@ fakeroot do_install_home_files() {
 	wget -q -P ${APTGET_CHROOT_DIR}/home/user/ https://raw.githubusercontent.com/rudislabs/NavQPlus-Resources/lf-6.1.22_2.0.0/configs/CycloneDDSConfig.xml
 
 	cat >> ${APTGET_CHROOT_DIR}/home/user/.bashrc <<-EOF
-		source /opt/ros/humble/setup.bash
+		GZ_VERSION=harmonic
+		ROS_DISTRO=jazzy
 		export ROS_DOMAIN_ID=7
+		export CMAKE_EXPORT_COMPILE_COMMANDS=ON
 		export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+		export PYTHONWARNINGS="ignore"
 		export CYCLONEDDS_URI=/home/user/CycloneDDSConfig.xml
-		export PYTHONWARNINGS=ignore:::setuptools.installer,ignore:::setuptools.command.install,ignore:::setuptools.command.easy_install
 		export PATH=/usr/lib/ccache:\$PATH
 		export CCACHE_TEMPDIR=/tmp/ccache
-		source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
+		source /opt/ros/jazzy/setup.bash
 		source /usr/share/colcon_cd/function/colcon_cd.sh
+		source /usr/share/colcon_cd/function/colcon_cd-argcomplete.bash
 		source /usr/share/vcstool-completion/vcs.bash
 		EOF
 
@@ -263,9 +230,6 @@ fakeroot do_install_home_files() {
 }
 
 fakeroot do_aptget_user_update() {
-	wget -q -P ${APTGET_CHROOT_DIR}/ https://github.com/rudislabs/NavQPlus-Resources/raw/lf-5.15.32_2.0.0/python/tflite_runtime-2.12.0-cp310-cp310-linux_aarch64.whl
-	chroot ${APTGET_CHROOT_DIR} /usr/bin/pip3 install tflite_runtime-2.12.0-cp310-cp310-linux_aarch64.whl
-	rm -f ${APTGET_CHROOT_DIR}/tflite_runtime-2.12.0-cp310-cp310-linux_aarch64.whl
 	chroot ${APTGET_CHROOT_DIR} /usr/sbin/adduser user plugdev
 	chroot ${APTGET_CHROOT_DIR} /usr/sbin/adduser user input
 
